@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penjejak Tugasan Elegan & Amaran Ambilan</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Font Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti untuk kesan letupan XP 🎉 -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            background-attachment: fixed;
+            color: #0f172a;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+        .glass-card {
+            background: #ffffff;
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            transition: all 0.3s ease;
+        }
+        .glass-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.12);
+        }
+        @keyframes shake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-15deg); }
+            50% { transform: rotate(0deg); }
+            75% { transform: rotate(15deg); }
+        }
+        .animate-shake {
+            animation: shake 0.4s infinite;
+            transform-origin: center;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-20">
+
+    <nav class="glass sticky top-0 z-30 border-b border-white/40">
+        <div class="max-w-6xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-br from-indigo-500 to-purple-600 p-2.5 rounded-xl text-white shadow-lg">
+                    📚
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold text-slate-800 tracking-tight">Penjejak Tugasan Pro</h1>
+                    <p class="text-xs font-semibold text-slate-500">Urus akademik dengan gaya & motivasi.</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2 sm:gap-3">
+                <!-- Portal Universiti Buttons -->
+                <a href="https://portal.upsi.edu.my" target="_blank" 
+                    class="hidden md:flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-2 rounded-xl text-xs font-extrabold shadow-sm transition">
+                    🏛️ Portal Uni ↗
+                </a>
+                <a href="https://elearning.upsi.edu.my" target="_blank" 
+                    class="hidden md:flex items-center gap-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 px-3 py-2 rounded-xl text-xs font-extrabold shadow-sm transition">
+                    💻 e-Learning ↗
+                </a>
+
+                <!-- XP / Level Badge -->
+                <div class="hidden sm:flex items-center gap-2 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-full shadow-inner">
+                    🏆 <span id="levelDisplay" class="font-bold text-amber-700 text-sm">Level 1</span>
+                </div>
+                
+                <!-- Kalendar Button -->
+                <button onclick="openCalendarModal()" class="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-slate-700 shadow-sm transition" title="Buka Kalendar">
+                    📅
+                </button>
+
+                <!-- Siren Amaran (Bergoyang bila ada urgent task) -->
+                <button id="sirenBtn" onclick="toggleUrgentModal()" class="relative p-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl shadow-sm transition" title="Senarai Tugasan Kritikal">
+                    <span id="sirenIcon" class="text-xl inline-block animate-shake">🚨</span>
+                    <span id="urgentBadge" class="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] rounded-full h-5 w-5 flex items-center justify-center font-bold border-2 border-white shadow-sm">2</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+        
+        <!-- Top Section: Quote & Pomodoro Timer -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+            <div class="lg:col-span-2 glass-card rounded-[2rem] p-8 flex flex-col justify-center relative overflow-hidden bg-gradient-to-br from-indigo-900 to-purple-900 text-white">
+                <div class="absolute right-4 bottom-4 text-7xl opacity-10">💡</div>
+                <span class="text-xs font-bold uppercase tracking-widest text-indigo-300 mb-2">Kata Semangat Hari Ini</span>
+                <h2 id="quoteText" class="text-xl sm:text-2xl font-extrabold leading-relaxed">
+                    "Usaha tangga kejayaan. Jangan berhenti selagi belum selesai!"
+                </h2>
+                <p class="text-indigo-200 font-semibold mt-4 text-sm">— Sistem Pemacu Kejayaan Anda</p>
+            </div>
+
+            <!-- Pomodoro Timer Card -->
+            <div class="glass-card rounded-[2rem] p-6 text-center flex flex-col items-center justify-center bg-gradient-to-b from-white to-indigo-50/50">
+                <h3 class="font-bold text-slate-500 uppercase tracking-widest text-xs mb-2">Jam Fokus Pomodoro</h3>
+                <div id="timerDisplay" class="text-5xl font-black text-indigo-700 tracking-tighter my-2 font-mono">
+                    25:00
+                </div>
+                <div class="flex gap-3 mt-4">
+                    <button id="pomodoroToggleBtn" onclick="togglePomodoro()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 transition">
+                        Mula
+                    </button>
+                    <button onclick="resetPomodoro()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition">
+                        Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Stats Row -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+            <div class="md:col-span-2 glass-card rounded-2xl p-5 flex flex-col justify-center">
+                <div class="flex justify-between items-end mb-2">
+                    <div class="flex items-center gap-2">
+                        🔥 <span class="font-bold text-slate-700">Tahap Kemajuan XP</span>
+                    </div>
+                    <span id="xpText" class="text-xs font-bold text-indigo-600">120 / 100 XP</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden shadow-inner">
+                    <div id="xpBar" class="bg-gradient-to-r from-orange-400 to-rose-500 h-3 rounded-full transition-all duration-500" style="width: 20%;"></div>
+                </div>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-5 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-bold text-slate-400 uppercase">Belum Selesai</p>
+                    <p id="pendingCount" class="text-2xl font-black text-amber-600">2</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 text-xl font-bold">⏳</div>
+            </div>
+            <div class="glass-card rounded-2xl p-5 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-bold text-slate-400 uppercase">Telah Selesai</p>
+                    <p id="completedCount" class="text-2xl font-black text-emerald-600">0</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-xl font-bold">✅</div>
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+            <div class="flex items-center gap-4 w-full sm:w-auto">
+                <h2 class="text-2xl font-extrabold text-slate-800">Senarai Tugasan Misi</h2>
+                <div id="progressPercentBadge" class="bg-white px-3 py-1 rounded-lg border border-slate-200 text-sm font-bold text-indigo-600 shadow-sm">
+                    0% Siap
+                </div>
+            </div>
+            <button onclick="openFormModal()" class="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-slate-900/20">
+                ➕ Tambah Tugasan Baru
+            </button>
+        </div>
+
+        <!-- Container Kad Tugasan -->
+        <div id="tasksContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Diisi secara dinamik oleh JavaScript -->
+        </div>
+    </main>
+
+    <!-- Modal Tambah/Edit Tugasan -->
+    <div id="formModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-[2rem] shadow-2xl p-6 md:p-8 max-w-lg w-full relative">
+            <h2 id="formModalTitle" class="text-2xl font-extrabold text-slate-900 mb-6">Tambah Tugasan Baru</h2>
+            
+            <form id="taskForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                <input type="hidden" id="editTaskId">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Tajuk Tugasan</label>
+                    <input required type="text" id="taskTitle" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Cth: Laporan Projek Akhir">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Subjek / Kursus</label>
+                    <input required type="text" id="taskSubject" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Cth: Kejuruteraan Perisian">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Tarikh & Masa Akhir (Due Date)</label>
+                        <input required type="datetime-local" id="taskDueDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Tahap Keutamaan</label>
+                        <select id="taskPriority" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="High">🔥 Tinggi (Kritikal)</option>
+                            <option value="Medium" selected>⭐ Sederhana</option>
+                            <option value="Low">🌱 Rendah (Santai)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Pautan / Link Rujukan</label>
+                    <input type="url" id="taskLink" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="https://...">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Nota / Bahan Rujukan</label>
+                    <textarea id="taskReferences" rows="2" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 resize-none" placeholder="Rujuk bab 4 nota kuliah..."></textarea>
+                </div>
+
+                <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeFormModal()" class="px-6 py-3 text-slate-600 hover:bg-slate-100 font-bold rounded-xl transition">Batal</button>
+                    <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition shadow-lg shadow-indigo-500/30">Simpan Tugasan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Amaran Siren & Senarai Urgent (Bunyi Ambulan Nino Nino) -->
+    <div id="urgentModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(220,38,38,0.5)] p-6 max-w-md w-full border-t-[10px] border-red-600">
+            <div class="flex flex-col items-center justify-center text-center mb-4">
+                <span class="text-5xl mb-2 animate-shake">🚑🚨</span>
+                <h2 class="text-2xl font-extrabold text-slate-900">NINO NINO! AMARAN KRITIKAL!</h2>
+                <p class="text-slate-500 text-sm mt-1 font-medium">Senarai assignment yang perlu disegerakan minggu ni!</p>
+            </div>
+            
+            <div id="urgentTasksList" class="max-h-60 overflow-y-auto space-y-3 mb-5 pr-2">
+                <!-- Diisi JS -->
+            </div>
+            
+            <button onclick="closeUrgentModal()" class="w-full bg-gradient-to-r from-red-600 to-red-500 text-white font-bold py-3.5 rounded-2xl hover:from-red-700 hover:to-red-600 transition-all shadow-lg shadow-red-500/30">
+                BAIK, SAYA BUAT SEKARANG! 🏃💨
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal Kalendar Interaktif -->
+    <div id="calendarModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2rem] shadow-2xl p-6 max-w-3xl w-full max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
+                    📅 Kalendar Tarikh Akhir Tugasan
+                </h2>
+                <button onclick="closeCalendarModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-700">Tutup</button>
+            </div>
+            <div id="calendarContent" class="overflow-y-auto flex-1 pr-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                <!-- Senarai tarikh due date -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data Utama
+        let tasks = [
+            {
+                id: 1,
+                title: "Laporan Projek Pangkalan Data",
+                subject: "CSC301",
+                dueDate: new Date(Date.now() + 86400000 * 3).toISOString().slice(0,16),
+                priority: "High",
+                link: "https://portal.upsi.edu.my",
+                references: "Pastikan format ERD lengkap dan betul.",
+                status: "Belum Selesai"
+            },
+            {
+                id: 2,
+                title: "Kuiz Analisis Statistik",
+                subject: "MAT205",
+                dueDate: new Date(Date.now() + 86400000 * 5).toISOString().slice(0,16),
+                priority: "Medium",
+                link: "",
+                references: "Rujuk bab kebarangkalian.",
+                status: "Belum Selesai"
+            }
+        ];
+
+        let xp = 120;
+        let pomodoroTime = 25 * 60;
+        let pomodoroInterval = null;
+        let isPomodoroRunning = false;
+        
+        // Ambulans Audio Synth State
+        let audioCtx = null;
+        let ambulanceInterval = null;
+
+        const quotes = [
+            "Usaha tangga kejayaan. Jangan berhenti selagi belum selesai!",
+            "Tugasan hari ini adalah pelaburan untuk masa depan anda. 🚀",
+            "Satu langkah kecil hari ini mengubah masa depan anda.",
+            "Berhenti merenung nasib, buka tugasan dan mulakan sekarang! 💪"
+        ];
+
+        // Init App on Load
+        window.onload = function() {
+            renderApp();
+            document.getElementById('quoteText').innerText = `"${quotes[Math.floor(Math.random() * quotes.length)]}"`;
+        };
+
+        function renderApp() {
+            // Level & XP calculation
+            const level = Math.floor(xp / 100) + 1;
+            const xpProgress = xp % 100;
+            document.getElementById('levelDisplay').innerText = `Level ${level}`;
+            document.getElementById('xpText').innerText = `${xpProgress} / 100 XP`;
+            document.getElementById('xpBar').style.width = `${xpProgress}%`;
+
+            // Hitung status
+            const pending = tasks.filter(t => t.status === 'Belum Selesai').length;
+            const completed = tasks.filter(t => t.status === 'Selesai').length;
+            const percent = tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0;
+
+            document.getElementById('pendingCount').innerText = pending;
+            document.getElementById('completedCount').innerText = completed;
+            document.getElementById('progressPercentBadge').innerText = `${percent}% Siap`;
+
+            // Semak Urgent
+            const urgentList = tasks.filter(t => {
+                if(t.status === 'Selesai') return false;
+                const days = (new Date(t.dueDate) - new Date()) / (1000 * 60 * 60 * 24);
+                return days <= 7;
+            });
+
+            document.getElementById('urgentBadge').innerText = urgentList.length;
+            if(urgentList.length === 0) {
+                document.getElementById('sirenIcon').classList.remove('animate-shake');
+            } else {
+                document.getElementById('sirenIcon').classList.add('animate-shake');
+            }
+
+            // Render Task Cards
+            let html = '';
+            if(tasks.length === 0) {
+                html = `
+                    <div class="col-span-2 glass-card rounded-[2rem] p-16 text-center flex flex-col items-center">
+                        <div class="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center text-3xl mb-4">🎉</div>
+                        <h3 class="text-xl font-extrabold text-slate-800 mb-2">Tiada Misi Semasa</h3>
+                        <p class="text-slate-500 text-sm">Tekan butang tambah tugasan di atas untuk mula membina kejayaan!</p>
+                    </div>
+                `;
+            } else {
+                tasks.sort((a,b) => (a.status === 'Selesai') - (b.status === 'Selesai')).forEach(item => {
+                    const isDone = item.status === 'Selesai';
+                    const diff = +new Date(item.dueDate) - +new Date();
+                    let timeLeftStr = "Tamat Tempoh!";
+                    if(diff > 0) {
+                        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+                        timeLeftStr = `${days} Hari ${hours} Jam lagi`;
+                    }
+
+                    const priorityColor = item.priority === 'High' ? 'bg-rose-100 text-rose-700 border-rose-200' : item.priority === 'Medium' ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-emerald-100 text-emerald-700 border-emerald-200';
+                    const barColor = isDone ? 'bg-slate-300' : item.priority === 'High' ? 'bg-rose-500' : item.priority === 'Medium' ? 'bg-amber-400' : 'bg-emerald-400';
+
+                    html += `
+                        <div class="glass-card rounded-[1.5rem] p-6 relative overflow-hidden ${isDone ? 'opacity-60 bg-slate-50' : ''}">
+                            <div class="absolute left-0 top-0 bottom-0 w-1.5 ${barColor}"></div>
+                            <div class="flex justify-between items-start mb-4 pl-2">
+                                <div>
+                                    <span class="text-[10px] uppercase font-extrabold px-3 py-1 rounded-full border ${priorityColor}">
+                                        ${item.priority === 'High' ? 'Kritikal' : item.priority === 'Medium' ? 'Sederhana' : 'Rendah'}
+                                    </span>
+                                    <h3 class="mt-3 text-xl font-extrabold text-slate-800 ${isDone ? 'line-through text-slate-400' : ''}">${escapeHtml(item.title)}</h3>
+                                    <p class="text-sm font-semibold text-indigo-600 mt-1">${escapeHtml(item.subject)}</p>
+                                </div>
+                                <div class="flex gap-1 bg-slate-50 p-1 rounded-xl">
+                                    <button onclick="editTask(${item.id})" class="p-2 text-slate-400 hover:text-indigo-600 transition" title="Sunting">✏️</button>
+                                    <button onclick="deleteTask(${item.id})" class="p-2 text-slate-400 hover:text-red-600 transition" title="Padam">🗑️</button>
+                                </div>
+                            </div>
+                            <div class="pl-2 flex flex-wrap gap-3 mt-4 text-xs font-bold text-slate-600">
+                                <div class="bg-slate-100 px-3 py-1.5 rounded-lg">⏰ Due: ${new Date(item.dueDate).toLocaleString('ms-MY', {dateStyle:'short', timeStyle:'short'})}</div>
+                                ${!isDone ? `<div class="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg">⏳ ${timeLeftStr}</div>` : ''}
+                            </div>
+                            ${(item.link || item.references) ? `
+                                <div class="ml-2 mt-4 p-3 bg-slate-50 rounded-2xl text-xs space-y-2">
+                                    ${item.link ? `<a href="${escapeHtml(item.link)}" target="_blank" class="text-indigo-600 font-bold hover:underline block">🔗 Buka Pautan Rujukan ↗</a>` : ''}
+                                    ${item.references ? `<p class="text-slate-600 font-medium">📌 ${escapeHtml(item.references)}</p>` : ''}
+                                </div>
+                            ` : ''}
+                            <div class="mt-6 pt-4 border-t border-slate-100 ml-2">
+                                <button onclick="toggleTaskStatus(${item.id})" class="w-full py-3 rounded-xl font-extrabold transition-all duration-300 ${isDone ? 'bg-slate-200 text-slate-500 hover:bg-slate-300' : 'bg-gradient-to-r from-emerald-500 to-teal-400 text-white shadow-lg shadow-emerald-500/20'}">
+                                    ${isDone ? 'Batal Selesai' : '✅ TANDA SELESAI (+50 XP)'}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('tasksContainer').innerHTML = html;
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // Pomodoro Timer Logic
+        function togglePomodoro() {
+            if(isPomodoroRunning) {
+                clearInterval(pomodoroInterval);
+                isPomodoroRunning = false;
+                document.getElementById('pomodoroToggleBtn').innerText = "Sambung";
+                document.getElementById('pomodoroToggleBtn').className = "px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition";
+            } else {
+                isPomodoroRunning = true;
+                document.getElementById('pomodoroToggleBtn').innerText = "Jeda";
+                document.getElementById('pomodoroToggleBtn').className = "px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-lg transition";
+                pomodoroInterval = setInterval(() => {
+                    if(pomodoroTime > 0) {
+                        pomodoroTime--;
+                        updateTimerDisplay();
+                    } else {
+                        clearInterval(pomodoroInterval);
+                        isPomodoroRunning = false;
+                        confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+                        alert("Tahniah! Sesi Pomodoro tamat. Masa untuk berehat sebentar! ☕");
+                        pomodoroTime = 25 * 60;
+                        updateTimerDisplay();
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetPomodoro() {
+            clearInterval(pomodoroInterval);
+            isPomodoroRunning = false;
+            pomodoroTime = 25 * 60;
+            updateTimerDisplay();
+            document.getElementById('pomodoroToggleBtn').innerText = "Mula";
+            document.getElementById('pomodoroToggleBtn').className = "px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition";
+        }
+
+        function updateTimerDisplay() {
+            const m = Math.floor(pomodoroTime / 60).toString().padStart(2, '0');
+            const s = (pomodoroTime % 60).toString().padStart(2, '0');
+            document.getElementById('timerDisplay').innerText = `${m}:${s}`;
+        }
+
+        // Modal Form
+        function openFormModal(editData = null) {
+            document.getElementById('formModal').classList.remove('hidden');
+            if(editData) {
+                document.getElementById('formModalTitle').innerText = "Sunting Tugasan";
+                document.getElementById('editTaskId').value = editData.id;
+                document.getElementById('taskTitle').value = editData.title;
+                document.getElementById('taskSubject').value = editData.subject;
+                document.getElementById('taskDueDate').value = editData.dueDate;
+                document.getElementById('taskPriority').value = editData.priority;
+                document.getElementById('taskLink').value = editData.link || '';
+                document.getElementById('taskReferences').value = editData.references || '';
+            } else {
+                document.getElementById('formModalTitle').innerText = "Tambah Tugasan Baru";
+                document.getElementById('taskForm').reset();
+                document.getElementById('editTaskId').value = '';
+            }
+        }
+
+        function closeFormModal() {
+            document.getElementById('formModal').classList.add('hidden');
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('editTaskId').value;
+            const taskData = {
+                id: id ? Number(id) : Date.now(),
+                title: document.getElementById('taskTitle').value,
+                subject: document.getElementById('taskSubject').value,
+                dueDate: document.getElementById('taskDueDate').value,
+                priority: document.getElementById('taskPriority').value,
+                link: document.getElementById('taskLink').value,
+                references: document.getElementById('taskReferences').value,
+                status: "Belum Selesai"
+            };
+
+            if(id) {
+                const index = tasks.findIndex(t => t.id === Number(id));
+                if(index !== -1) {
+                    taskData.status = tasks[index].status;
+                    tasks[index] = taskData;
+                }
+            } else {
+                tasks.unshift(taskData);
+            }
+
+            closeFormModal();
+            renderApp();
+        }
+
+        function editTask(id) {
+            const item = tasks.find(t => t.id === id);
+            if(item) openFormModal(item);
+        }
+
+        function deleteTask(id) {
+            if(confirm("Adakah anda pasti mahu memadam tugasan ini?")) {
+                tasks = tasks.filter(t => t.id !== id);
+                renderApp();
+            }
+        }
+
+        function toggleTaskStatus(id) {
+            const item = tasks.find(t => t.id === id);
+            if(item) {
+                if(item.status === 'Belum Selesai') {
+                    item.status = 'Selesai';
+                    xp += 50;
+                    confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+                } else {
+                    item.status = 'Belum Selesai';
+                    xp = Math.max(0, xp - 50);
+                }
+                renderApp();
+            }
+        }
+
+        // Audio Ambulan Nino Nino & Urgent Modal
+        function startAmbulanceSiren() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = 'sawtooth';
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                gain.gain.value = 0.05;
+                
+                osc.start();
+                let high = true;
+                osc.frequency.setValueAtTime(900, audioCtx.currentTime);
+                
+                ambulanceInterval = setInterval(() => {
+                    if(audioCtx && audioCtx.state === 'running') {
+                        osc.frequency.setValueAtTime(high ? 650 : 900, audioCtx.currentTime);
+                        high = !high;
+                    }
+                }, 400);
+
+                window.currentOsc = osc;
+                window.currentGain = gain;
+            } catch(e) {
+                console.log("Audio disekat pelayar", e);
+            }
+        }
+
+        function stopAmbulanceSiren() {
+            if(ambulanceInterval) clearInterval(ambulanceInterval);
+            if(window.currentOsc) {
+                try { window.currentOsc.stop(); } catch(e){}
+                window.currentOsc.disconnect();
+            }
+            if(window.currentGain) window.currentGain.disconnect();
+            audioCtx = null;
+        }
+
+        function toggleUrgentModal() {
+            const urgentList = tasks.filter(t => {
+                if(t.status === 'Selesai') return false;
+                const days = (new Date(t.dueDate) - new Date()) / (1000 * 60 * 60 * 24);
+                return days <= 7;
+            });
+
+            let html = '';
+            if(urgentList.length === 0) {
+                html = `<p class="text-green-600 font-bold text-center py-4 bg-green-50 rounded-xl">Tahniah! Tiada tugasan kritikal minggu ni. Boleh lek-lek je 😎</p>`;
+            } else {
+                urgentList.forEach(t => {
+                    html += `
+                        <div class="p-3.5 bg-red-50 border border-red-200 rounded-2xl shadow-sm">
+                            <h4 class="font-bold text-slate-800 text-sm">${escapeHtml(t.title)}</h4>
+                            <p class="text-xs text-red-600 mt-1 font-bold">🏛️ ${escapeHtml(t.subject)} | ⏰ Due: ${new Date(t.dueDate).toLocaleString('ms-MY')}</p>
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('urgentTasksList').innerHTML = html;
+            document.getElementById('urgentModal').classList.remove('hidden');
+            startAmbulanceSiren();
+        }
+
+        function closeUrgentModal() {
+            document.getElementById('urgentModal').classList.add('hidden');
+            stopAmbulanceSiren();
+        }
+
+        // Calendar Modal
+        function openCalendarModal() {
+            let html = '';
+            if(tasks.length === 0) {
+                html = `<p class="text-slate-500 text-sm col-span-full text-center py-6">Tiada tarikh akhir direkodkan.</p>`;
+            } else {
+                tasks.forEach(t => {
+                    html += `
+                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+                            <span class="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">${escapeHtml(t.subject)}</span>
+                            <h4 class="font-bold text-slate-800 text-sm mt-2">${escapeHtml(t.title)}</h4>
+                            <p class="text-xs text-slate-500 mt-1">📅 ${new Date(t.dueDate).toLocaleString('ms-MY', {dateStyle:'medium', timeStyle:'short'})}</p>
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('calendarContent').innerHTML = html;
+            document.getElementById('calendarModal').classList.remove('hidden');
+        }
+
+        function closeCalendarModal() {
+            document.getElementById('calendarModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
